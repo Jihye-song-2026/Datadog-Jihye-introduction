@@ -471,7 +471,6 @@ const IMG = {
     "Images/Quickvideo.png",
   datadog:
     "Images/datadog.png"
-
 };
 
 const spans = [
@@ -525,12 +524,16 @@ const spans = [
     years: " Product Manager, Samsung",
     color: "#7C4DFF",
     tag: "service.payments · developer portal",
-    cue: "Started my journey as a Product Manager,  <span class='hl'> led Samsung Pay global expansion </span> across 5+ countries.",
+    cue: "Started new journey as a PM, <span class='hl'> led Samsung Pay global expansion. </span>",
     role: "Product Manager, developer portal",
     narrative: "I led the Samsung Pay developer portal, defining clearer error codes, guiding partner integrations, and simplifying the SDK setup process for merchants. <br> I also designed the architecture and user payment flow for Samsung Pay, and launched membership and marketplace services.",
     image: IMG.pay,
-    
-    metricsImage: IMG.paySdk
+    metricsImage: IMG.paySdk,
+    metrics: [
+      { num: "2nd Patent", cap: "Transmitting personal information" },
+      { num: "5+ countires", cap: "GTM expansion" },
+      { num: "Developer portal", cap: "SDK integrations" }
+    ]
   },
   {
     id: "camera",
@@ -540,8 +543,9 @@ const spans = [
     tag: "service.camera · partner sdk",
     cue: "Drove Samsung Mobile's top priority project: <span class='hl'> from feature delivery to ecosystem delivery.</span>",
     role: "Senior Product Manager, Camera Strategy",
-    narrative: "A CEO visit to a mobile store raised the issue, and I traced it back to the root cause and delivered key SDK integrations with partners including Instagram, Snapchat, TikTok, LINE and Snow. <br><br>",
+    narrative: "A CEO visit to a mobile store raised the issue, and I traced it back to the root cause and delivered key SDK integrations with partners including Instagram, Snapchat and TikTok.",
     image: IMG.camera,
+    metricsImage: IMG.cameraSdk,
     metrics: [
       { num: "90%", cap: "reduction in media quality loss" },
       { num: "12%", cap: "camera usage" },
@@ -661,19 +665,19 @@ function buildLeftHtml(s) {
 
 function buildBottomHtml(s) {
   let html = '';
-  if (s.metrics) {
+  if (s.metricsImage) {
+    html += `
+      <div class="visual-frame" style="max-width:420px;">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <img src="${s.metricsImage}" /><br>
+      </div>`;
+  }if (s.metrics) {
     html += `
       <div class="metric-grid">
         ${s.metrics.map(m => `<div class="metric"><div class="num">${m.num}</div><div class="cap">${m.cap}</div></div>`).join('')}
       </div>`;
   }
-  if (s.metricsImage) {
-    html += `
-      <div class="visual-frame" style="max-width:450px;">
-        <div class="chrome"><i></i><i></i><i></i></div>
-        <img src="${s.metricsImage}" />
-      </div>`;
-  }
+  
   return html;
 }
 
