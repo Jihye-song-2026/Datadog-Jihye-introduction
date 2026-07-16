@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>jihye.career.trace</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#0A0A12;
+  --panel:#131320;
+  --panel-alt:#1B1B2E;
+  --purple:#7C4DFF;
+  --purple-soft:#B39DFF;
+  --magenta:#E930C5;
+  --green:#3ADB8F;
+  --amber:#FFC24B;
+  --text:#F5F4FA;
+  --text-muted:#9997AD;
+  --line:#2A2A3D;
+}
+*{box-sizing:border-box;}
+html,body{
+  margin:0; padding:0; width:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk', sans-serif;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+}
+.mono{ font-family:'JetBrains Mono', monospace; }
+
+#stage{
+  position:relative;
+  width:100%;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ---------- TOP BAR (mimics an APM trace header) ---------- */
+#topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 32px;
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+#topbar .breadcrumb{
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  color:var(--text-muted);
+  letter-spacing:0.02em;
+}
+#topbar .breadcrumb b{ color:var(--purple-soft); font-weight:600; }
+#topbar .trace-meta{
+  display:flex; gap:20px; align-items:center;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+}
+#topbar .dot{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--green);
+  display:inline-block; margin-right:6px;
+  box-shadow:0 0 8px var(--green);
+  animation:pulse 1.6s infinite;
+}
+@keyframes pulse{
+  0%,100%{ opacity:1; } 50%{ opacity:0.35; }
+}
+
+/* ---------- OVERVIEW: the flame trace waterfall ---------- */
+#overview{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:40px 60px;
+  transition:opacity 0.45s ease;
+}
+#overview .title{
+  font-size:15px;
+  color:var(--text-muted);
+  font-family:'JetBrains Mono', monospace;
+  margin-bottom:6px;
+  letter-spacing:0.03em;
+}
+#overview h1{
+  font-size:42px;
+  margin:0 0 36px 0;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+#overview h1 span{ color:var(--purple-soft); }
+
+#root-span{
+  height:34px;
+  border-radius:6px;
+  background:linear-gradient(90deg, var(--panel-alt), var(--panel));
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+  margin-bottom:14px;
+}
+
+#waterfall{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.span-row{
+  position:relative;
+  height:56px;
+  display:flex;
+  align-items:center;
+}
+.span-track{
+  position:relative;
+  flex:1;
+  height:100%;
+  display:flex;
+  align-items:center;
+}
+.span-block{
+  height:44px;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  cursor:pointer;
+  border:1px solid transparent;
+  transition:transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+  position:relative;
+  overflow:hidden;
+}
+.span-block:hover, .span-block.active{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px -8px rgba(124,77,255,0.55);
+  border-color:var(--purple-soft);
+}
+.span-block .label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  font-weight:600;
+  color:#0A0A12;
+  white-space:nowrap;
+}
+.span-block .years{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:rgba(10,10,18,0.6);
+  margin-left:10px;
+  white-space:nowrap;
+}
+.idx{
+  width:34px;
+  flex-shrink:0;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+  text-align:right;
+  margin-right:14px;
+}
+
+#hint{
+  margin-top:34px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+kbd{
+  background:var(--panel-alt);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:3px 8px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--purple-soft);
+}
+
+/* ---------- DETAIL (zoomed span) VIEW ---------- */
+#detail{
+  position:absolute;
+  inset:0;
+  display:flex;
+  background:var(--bg);
+  opacity:0;
+  pointer-events:none;
+  transform:scale(0.92);
+  transition:opacity 0.5s cubic-bezier(.22,.68,.36,1), transform 0.5s cubic-bezier(.22,.68,.36,1);
+  z-index:4;
+}
+#detail.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:scale(1);
+}
+#detail .left{
+  width:44%;
+  padding:56px 48px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  border-right:1px solid var(--line);
+  overflow-y:auto;
+}
+#detail .right{
+  flex:1;
+  padding:56px 56px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:26px;
+  overflow-y:auto;
+}
+.span-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  align-self:flex-start;
+  padding:6px 12px;
+  border-radius:20px;
+  background:var(--panel-alt);
+  border:1px solid var(--line);
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--purple-soft);
+  margin-bottom:18px;
+}
+.anchor-cue{
+  font-size:44px;
+  font-weight:700;
+  line-height:1.15;
+  margin:0 0 18px 0;
+  letter-spacing:-0.01em;
+}
+.anchor-cue .hl{ color:#8000FF; }
+.role-line{
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  color:var(--text-muted);
+  margin-bottom:26px;
+}
+.narrative{
+  font-size:16px;
+  line-height:1.65;
+  color:var(--text);
+  max-width:440px;
+  opacity:0.92;
+}
+.attrs{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  margin-top:28px;
+}
+.attrs .row{ display:flex; gap:10px; }
+.attrs .k{ color:var(--text-muted); min-width:110px; }
+.attrs .v{ color:var(--purple-soft); }
+
+.visual-frame{
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+  background:var(--panel);
+  box-shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+  max-width:530px;
+  align-self:flex-start;
+}
+.visual-frame .chrome{
+  display:flex;
+  gap:6px;
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+.visual-frame .chrome i{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--line);
+}
+.visual-frame img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+.metric-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.metric{
+  width:180px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px 18px;
+}
+.metric{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px 18px;
+}
+.metric .num{
+  font-family:'JetBrains Mono', monospace;
+  font-size:24px;
+  font-weight:700;
+  color:var(--green);
+}
+.metric .cap{
+  font-size:11px;
+  color:var(--text-muted);
+  margin-top:4px;
+  line-height:1.4;
+}
+
+/* ---------- NAV DOTS + counter ---------- */
+#navbar{
+  position:absolute;
+  bottom:26px;
+  left:0; right:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  z-index:5;
+}
+#navbar .dots{ display:flex; gap:8px; }
+#navbar .dotnav{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--line);
+  cursor:pointer;
+  transition:background 0.2s, transform 0.2s;
+}
+#navbar .dotnav.active{ background:var(--purple); transform:scale(1.35); }
+#navbar .counter{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--text-muted);
+  margin-left:8px;
+}
+
+#closebtn, #fsbtn{
+  position:absolute;
+  top:20px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--text-muted);
+  background:var(--panel-alt);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:6px 12px;
+  cursor:pointer;
+  z-index:6;
+}
+#closebtn{ right:100px; display:none; }
+#closebtn.show{ display:block; }
+#fsbtn{ right:20px; }
+#closebtn:hover, #fsbtn:hover{ border-color:var(--purple-soft); color:var(--purple-soft); }
+
+::-webkit-scrollbar{ width:8px; }
+::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+
+/* ---------- SCROLL SECTIONS (same spans, revealed on scroll, in order) ---------- */
+#scrollsections{
+  position:relative;
+  width:100%;
+}
+.scroll-section{
+  min-height:100vh;
+  width:100%;
+  display:flex;
+  align-items:center;
+  border-top:1px solid var(--line);
+  padding:60px;
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.scroll-section.in-view{
+  opacity:1;
+  transform:translateY(0);
+}
+.scroll-section .idxline{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+  margin-bottom:14px;
+}
+.scroll-section .scroll-left{
+  width:44%;
+  padding-right:40px;
+}
+.scroll-section .scroll-right{
+  flex:1;
+  padding-left:40px;
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div id="topbar">
+    <div class="breadcrumb">traces &nbsp;&rsaquo;&nbsp; <b>jihye.career.trace</b></div>
+    <div class="trace-meta">
+      <span><span class="dot"></span>recording</span>
+      <span id="tb-current">span: overview</span>
+    </div>
+  </div>
+
+  <div id="overview">
+    <div class="title">service: career &nbsp;&nbsp;env: interview &nbsp;&nbsp;trace_id: jhk_2026</div>
+    <h1>  Hi Pulkit, let's trace jihye.stack </h1>
+
+    <div id="root-span">root span &nbsp; jihye.career &nbsp;&nbsp; duration: 2009 to now &nbsp;&nbsp; status: active</div>
+
+    <div id="waterfall"></div>
+
+    <div id="hint">
+      press <kbd>space</kbd> to zoom into a span &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to move &nbsp;&middot;&nbsp; <kbd>esc</kbd> to return
+    </div>
+  </div>
+
+  <div id="detail">
+    <div class="left" id="detail-left"></div>
+    <div class="right" id="detail-right"></div>
+  </div>
+
+  <div id="navbar">
+    <div class="dots" id="dots"></div>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <button id="closebtn">&larr; overview</button>
+  <button id="fsbtn">fullscreen</button>
+</div>
+
+<div id="scrollsections"></div>
+
+<script>
+const IMG = {
+  ahnlab:
+  "/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/Ahnlab.png",
+  diagnosis:
+  "/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/Diagnostics2.png",
+  tizen:
+  "/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/Tizen.png",
+  pay:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/samsung-pay.png",
+  paySdk:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/samsungpay-sdk.png",
+  camera:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/Samsung Camera.png",
+  arcamera:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/ARcamera.png",
+  aivideo:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/Quickvideo.png",
+  datadog:"/Users/jihye/Desktop/USC Marshall MBA/-----Fulltime recruiting/00******Interview/Datadog/datadog.png"
+
+};
+
+const spans = [
+  {
+    id: "ahnlab",
+    label: "EPP (Enterprise Protection Platform)",
+    years: "QA Engineer, Ahnlab Security",
+    color: "#B39DFF",
+    tag: "service · EPP",
+    cue: "Delivered <span class='hl'>Enterprise Vulnerability diagnosis</span> Platform as QA Engineer",
+    role: "QA Engineer, B2B endpoint security",
+    narrative: "Before starting my full-time engineering role, I completed an 8-month full-time internship where I managed AhnLab Policy Center, one of the company's flagship enterprise security platforms. It centrally managed <span style='color: #3ADB8F'><strong>security agents, deployed security policies, and monitored enterprise endpoints</span>.<br><br>",
+    
+    image: IMG.ahnlab,
+    
+    metrics: [
+      { num: "B2B", cap: "" },
+      { num: "QA", cap: "" }
+    ]
+  },
+  
+  {
+    id: "diagnosis",
+    label: "Samsung Mobile Care",
+    years: "SW Engineer",
+    color: "#9D7BFF",
+    tag: "service.device · self diagnosis",
+    cue: "Then I learned devices could <span class='hl'>diagnose themselves</span>.",
+    role: "Samsung sponsored student program, top engineering track",
+    narrative: "As a Samsung sponsored student, I worked on the logic behind a self diagnosis app: battery, SIM, sensors, network, <span style='color: #3ADB8F'><strong> all tested from the device itself before a user ever files a ticket.</style> It is the same idea an agent runs today, just on a phone instead of a server.<br><br>",
+    image: IMG.diagnosis,
+  },
+  {
+    id: "tizen",
+    label: "Tizen OS Web Development",
+    years: "Software Engineer, Samsung",
+    color: "#A78BFA",
+    tag: "service.platform · browser",
+    cue: "Then I joined Samsung as a software engineer to develop <br> <span class='hl'> Tizen browser, Samsung's new OS.</span>",
+    role: "Software Engineer, browser and web platform",
+    narrative: "At Tizen OS (Samsung's own OS) team, delivering Samsung Internet across mobile and wearables. The browser sits underneath everything else a user touches on the device, so it is where I first learned that if the platform is not solid, nothing built on top of it holds up.<br><br>",
+    image: IMG.tizen,
+    metrics: [
+      { num: "1st Patent", cap: "Method of Processing Information in Electronic Devices" },
+      { num: "Promotion", cap: "Early Promotion to Software Engineer II" }
+    ]
+  },
+  {
+    id: "pay",
+    label: "Samsung Pay",
+    years: " Product Manager, Samsung",
+    color: "#7C4DFF",
+    tag: "service.payments · developer portal",
+    cue: "Started my journey as a Product Manager,  <span class='hl'> led Samsung Pay global expansion </span> across 5+ countries.",
+    role: "Product Manager, developer portal",
+    narrative: "I led the Samsung Pay developer portal, defining clearer error codes, guiding partner integrations, and simplifying the SDK setup process for merchants. <br> I also designed the architecture and user payment flow for Samsung Pay, and launched membership and marketplace services.",
+    image: IMG.pay,
+    
+    metricsImage: IMG.paySdk
+  },
+  {
+    id: "camera",
+    label: "Galaxy Camera SDK",
+    years: "Senior Product Manager, Samsung",
+    color: "#5B8DEF",
+    tag: "service.camera · partner sdk",
+    cue: "Drove Samsung Mobile's top priority project: <span class='hl'> from feature delivery to ecosystem delivery.</span>",
+    role: "Senior Product Manager, Camera Strategy",
+    narrative: "A CEO visit to a mobile store raised the issue, and I traced it back to the root cause and delivered key SDK integrations with partners including Instagram, Snapchat, TikTok, LINE and Snow. <br><br>",
+    image: IMG.camera,
+    metrics: [
+      { num: "90%", cap: "reduction in media quality loss" },
+      { num: "12%", cap: "camera usage" },
+      { num: "2M to 1M", cap: "integration time" }
+    ],
+  },
+  {
+    id: "arcamera",
+    label: "Graphics & Multimedia platform AR Camera",
+    years: "Product Manager, LINE",
+    color: "#4FD1C5",
+    tag: "service.ar · creative platform",
+    cue: "Same instinct, now applied to a LINE's graphics platform.",
+    role: "Senior PM, AR graphics platform",
+    narrative: "I set the direction for <span class='hl'> LINE's graphics and multimedia platform </span>, supporting AR content including effects, stickers, and CMS. <br> I identified the bottleneck in our production process and improved it through automation, increasing production speed by 900%. <br><br>",
+    image: IMG.arcamera,
+    metrics: [
+      { num: "900%", cap: "increase in production speed, 2 to 20 effects per month" },
+      { num: "50%", cap: "increased usage" }
+    ]
+  },
+  {
+    id: "aivideo",
+    label: "AI Video & Server Infrastructure",
+    years: "Product Manager, LINE",
+    color: "#34D399",
+    tag: "service.ai · video platform",
+    cue: "Built <span class='hl'> AI video product from 0 to 1 </span>, then the distributed system to support it at scale.",
+    role: "Senior PM, AI video creation platform",
+    narrative: "This platform scans a user's content and generates a short video across seven categories, with AI/ML models. Underneath it, I  supported the distributed gateway architecture that routed and rate limited that traffic, with a dual path fallback so AI inference load never took the whole system down.",
+    image: IMG.aivideo,
+    metrics: [
+      { num: "10%", cap: "lift in content creation" },
+      { num: "4%", cap: "increase in daily active users" }
+    ]
+  }
+];
+
+const CLOSING = {
+  cue: "Datadog is the next span. <br> <span class='hl'>Still recording.</span>",
+  role: "Agent Integration PM, candidate",
+  narrative: "I've enjoyed identifying customer pain points, finding the root cause, analyzing the problem, and delivering solutions that increase customer engagement.<br><br> <span style='color: #3ADB8F'><strong>I want this trace to keep running at Datadog.</style>",
+  image: IMG.datadog,
+};
+
+let current = -1; // -1 = overview
+const waterfall = document.getElementById('waterfall');
+const dotsWrap = document.getElementById('dots');
+const counter = document.getElementById('counter');
+const detail = document.getElementById('detail');
+const detailLeft = document.getElementById('detail-left');
+const detailRight = document.getElementById('detail-right');
+const overview = document.getElementById('overview');
+const closebtn = document.getElementById('closebtn');
+const tbCurrent = document.getElementById('tb-current');
+
+spans.forEach((s, i) => {
+  const row = document.createElement('div');
+  row.className = 'span-row';
+  const width = 30 + i * 11;
+  row.innerHTML = `
+    <div class="idx">${String(i+1).padStart(2,'0')}</div>
+    <div class="span-track">
+      <div class="span-block" data-i="${i}" style="width:${width}%; background:${s.color};">
+        <span class="label">${s.label}</span>
+        <span class="years">${s.years}</span>
+      </div>
+    </div>`;
+  waterfall.appendChild(row);
+
+  const dot = document.createElement('div');
+  dot.className = 'dotnav';
+  dot.dataset.i = i;
+  dotsWrap.appendChild(dot);
+});
+
+document.querySelectorAll('.span-block').forEach(el => {
+  el.addEventListener('click', () => openSpan(parseInt(el.dataset.i)));
+});
+document.querySelectorAll('.dotnav').forEach(el => {
+  el.addEventListener('click', () => openSpan(parseInt(el.dataset.i)));
+});
+closebtn.addEventListener('click', closeDetail);
+
+document.getElementById('fsbtn').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+function buildLeftHtml(s) {
+  if (s.images) {
+    return `
+      <div class="span-tag">${s.tag}</div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        ${s.images.map(img => `
+          <div class="visual-frame" style="max-width:100%;">
+            <div class="chrome"><i></i><i></i><i></i></div>
+            <img src="${img}" />
+          </div>`).join('')}
+      </div>
+    `;
+  }
+  return s.image ? `
+    <div class="span-tag">${s.tag}</div>
+    <div class="visual-frame">
+      <div class="chrome"><i></i><i></i><i></i></div>
+      <img src="${s.image}" />
+    </div>
+  ` : `
+    <div class="span-tag">${s.tag || 'service.datadog · candidate'}</div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:120px; color:var(--panel-alt); font-weight:700;">_</div>
+  `;
+}
+
+function buildBottomHtml(s) {
+  let html = '';
+  if (s.metrics) {
+    html += `
+      <div class="metric-grid">
+        ${s.metrics.map(m => `<div class="metric"><div class="num">${m.num}</div><div class="cap">${m.cap}</div></div>`).join('')}
+      </div>`;
+  }
+  if (s.metricsImage) {
+    html += `
+      <div class="visual-frame" style="max-width:450px;">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <img src="${s.metricsImage}" />
+      </div>`;
+  }
+  return html;
+}
+
+function buildRightHtml(s) {
+  return `
+    <div class="anchor-cue">${s.cue}</div>
+    <div class="role-line">${s.role}</div>
+    <div class="narrative">${s.narrative}</div>
+    ${buildBottomHtml(s)}
+  `;
+}
+
+function renderDetail(s) {
+  detailLeft.innerHTML = buildLeftHtml(s);
+  detailRight.innerHTML = buildRightHtml(s);
+}
+
+function openSpan(i) {
+  current = i;
+  const s = spans[i];
+  renderDetail(s);
+  detail.classList.add('show');
+  closebtn.classList.add('show');
+  tbCurrent.textContent = 'span: ' + s.label.toLowerCase().replace(/\s+/g,'.');
+  updateDots();
+}
+
+function openClosing() {
+  current = spans.length;
+  renderDetail({ ...CLOSING, tag: "service.datadog · open span" });
+  detail.classList.add('show');
+  closebtn.classList.add('show');
+  tbCurrent.textContent = 'span: datadog.next';
+  updateDots();
+}
+
+function closeDetail() {
+  current = -1;
+  detail.classList.remove('show');
+  closebtn.classList.remove('show');
+  tbCurrent.textContent = 'span: overview';
+  updateDots();
+}
+
+function updateDots() {
+  document.querySelectorAll('.dotnav').forEach((d, i) => {
+    d.classList.toggle('active', i === current);
+  });
+  counter.textContent = current === -1
+    ? 'overview'
+    : (current === spans.length ? 'next / ' + spans.length : (current+1) + ' / ' + spans.length);
+}
+
+function next() {
+  if (current === -1) { openSpan(0); }
+  else if (current < spans.length - 1) { openSpan(current + 1); }
+  else if (current === spans.length - 1) { openClosing(); }
+}
+function prev() {
+  if (current === 0) { closeDetail(); }
+  else if (current > 0) { openSpan(current - 1); }
+  else if (current === spans.length) { openSpan(spans.length - 1); }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); next(); }
+  else if (e.code === 'ArrowRight') { next(); }
+  else if (e.code === 'ArrowLeft') { prev(); }
+  else if (e.code === 'Escape') { closeDetail(); }
+});
+
+updateDots();
+
+// ---------- scrollytelling sections, same spans, same order ----------
+const scrollWrap = document.getElementById('scrollsections');
+const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span" }];
+
+allForScroll.forEach((s, i) => {
+  const section = document.createElement('div');
+  section.className = 'scroll-section';
+  const idxLabel = i < spans.length ? String(i+1).padStart(2,'0') + ' / ' + spans.length : 'next';
+  section.innerHTML = `
+    <div class="scroll-left">
+      <div class="idxline">${idxLabel}</div>
+      ${buildLeftHtml(s)}
+    </div>
+    <div class="scroll-right">
+      ${buildRightHtml(s)}
+    </div>`;
+  scrollWrap.appendChild(section);
+});
+
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('in-view');
+  });
+}, { threshold: 0.25 });
+
+document.querySelectorAll('.scroll-section').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
