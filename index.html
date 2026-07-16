@@ -36,9 +36,10 @@ html,body{
 #stage{
   position:relative;
   width:100%;
-  height:100vh;
+  height:120vh;
   display:flex;
   flex-direction:column;
+  overflow:hidden;
 }
 
 /* ---------- TOP BAR (mimics an APM trace header) ---------- */
@@ -90,6 +91,8 @@ html,body{
   justify-content:center;
   padding:40px 60px;
   transition:opacity 0.45s ease;
+  overflow-y:auto;
+  min-height:0;
 }
 #overview .title{
   font-size:15px;
