@@ -51,10 +51,18 @@ html,body{
   flex-shrink:0;
 }
 #topbar .breadcrumb{
+  display:flex;
+  align-items:center;
+  gap:10px;
   font-family:'JetBrains Mono', monospace;
   font-size:13px;
   color:var(--text-muted);
   letter-spacing:0.02em;
+}
+#dd-logo{
+  height:100px;
+  width:auto;
+  display:block;
 }
 #topbar .breadcrumb b{ color:var(--purple-soft); font-weight:600; }
 #topbar .trace-meta{
@@ -109,66 +117,200 @@ html,body{
   font-family:'JetBrains Mono', monospace;
   font-size:12px;
   color:var(--text-muted);
-  margin-bottom:14px;
+  margin-bottom:18px;
 }
 
-#waterfall{
+/* ---------- DASHBOARD GRID (Datadog widget style) ---------- */
+#mini-timeline{
+  position:relative;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  height:100px;
+  width:52%;
+  margin-bottom:44px;
+  padding:0 10px;
+}
+#mini-timeline::before{
+  content:'';
+  position:absolute;
+  left:10px; right:10px;
+  top:50%;
+  height:2px;
+  background:linear-gradient(90deg, #B39DFF, #7C4DFF, #5B8DEF, #4FD1C5, #34D399, #FFC24B);
+  transform:translateY(-50%);
+  z-index:0;
+  opacity:0.55;
+}
+.tl-node{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:1;
+}
+.tl-dot{
+  width:13px; height:13px;
+  border-radius:50%;
+  background:var(--bg);
+  border:2px solid var(--c);
+  box-shadow:0 0 10px var(--c);
+  cursor:pointer;
+}
+.tl-label{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  font-weight:600;
+  line-height:1.4;
+  white-space:nowrap;
+  color:var(--c);
+  pointer-events:none;
+}
+.tl-label.above{ bottom:20px; }
+.tl-label.below{ top:20px; }
+.tl-label .tl-dates{
+  display:block;
+  color:var(--text-muted);
+  font-weight:400;
+  font-size:9.5px;
+}
+.tl-node.datadog .tl-dot{
+  width:30px; height:30px;
+  border:none;
+  background:transparent;
+  box-shadow:none;
+  cursor:default;
+  position:relative;
+}
+.tl-node.datadog .tl-dot::before{
+  content:'';
+  position:absolute;
+  top:-8px; left:-8px; right:-8px; bottom:-8px;
+  border:2px dashed var(--amber);
+  border-radius:50%;
+  animation:dd-pulse 2.2s infinite;
+}
+@keyframes dd-pulse{
+  0%,100%{ opacity:0.9; transform:scale(1); }
+  50%{ opacity:0.4; transform:scale(1.08); }
+}
+.tl-node.datadog img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.tl-node.datadog .tl-label{ color:var(--amber); }
+
+#dashboard-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:14px;
+}
+.widget-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-top:3px solid var(--purple);
+  border-radius:8px;
+  padding:14px 16px 16px;
+  cursor:pointer;
+  transition:transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   display:flex;
   flex-direction:column;
-  gap:10px;
 }
-.span-row{
-  position:relative;
-  height:56px;
-  display:flex;
-  align-items:center;
-}
-.span-track{
-  position:relative;
-  flex:1;
-  height:100%;
-  display:flex;
-  align-items:center;
-}
-.span-block{
-  height:44px;
-  border-radius:8px;
-  display:flex;
-  align-items:center;
-  padding:0 16px;
-  cursor:pointer;
-  border:1px solid transparent;
-  transition:transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
-  position:relative;
-  overflow:hidden;
-}
-.span-block:hover, .span-block.active{
-  transform:translateY(-2px);
-  box-shadow:0 8px 24px -8px rgba(124,77,255,0.55);
+.widget-card:hover, .widget-card.active{
+  transform:translateY(-3px);
+  box-shadow:0 10px 26px -10px rgba(124,77,255,0.5);
   border-color:var(--purple-soft);
 }
-.span-block .label{
+.widget-card.widget-inprogress{
+  border:2px solid var(--amber);
+}
+.widget-card.widget-inprogress:hover{
+  border-color:var(--amber);
+  box-shadow:0 10px 26px -10px rgba(255,194,75,0.5);
+}
+.widget-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:14px;
+  min-height:42px;
+}
+.widget-title{
   font-family:'JetBrains Mono', monospace;
-  font-size:13px;
+  font-size:15px;
   font-weight:600;
-  color:#0A0A12;
-  white-space:nowrap;
+  color:var(--text);
+  line-height:1.35;
 }
-.span-block .years{
-  font-family:'JetBrains Mono', monospace;
-  font-size:11px;
-  color:rgba(10,10,18,0.6);
-  margin-left:10px;
-  white-space:nowrap;
-}
-.idx{
-  width:34px;
+.widget-badge{
   flex-shrink:0;
   font-family:'JetBrains Mono', monospace;
-  font-size:12px;
+  font-size:9px;
+  letter-spacing:0.04em;
+  color:var(--green);
+  border:1px solid rgba(58,219,143,0.35);
+  background:rgba(58,219,143,0.08);
+  border-radius:10px;
+  padding:2px 7px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.widget-badge.open{
+  color:var(--amber);
+  border-color:rgba(255,194,75,0.35);
+  background:rgba(255,194,75,0.08);
+}
+.widget-badge .bdot{
+  width:5px; height:5px; border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 6px currentColor;
+}
+.widget-thumb{
+  width:100%;
+  height:92px;
+  border-radius:6px;
+  overflow:hidden;
+  background:var(--bg);
+  margin-bottom:10px;
+  border:1px solid var(--line);
+}
+.widget-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.widget-kpi{
+  font-family:'JetBrains Mono', monospace;
+  font-size:26px;
+  font-weight:700;
+  line-height:1.1;
+  margin-bottom:6px;
+}
+.widget-query{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
   color:var(--text-muted);
-  text-align:right;
-  margin-right:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  margin-bottom:10px;
+}
+.widget-footer{
+  margin-top:auto;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  color:var(--text-muted);
 }
 
 #hint{
@@ -415,10 +557,10 @@ kbd{
 <div id="stage">
 
   <div id="topbar">
-    <div class="breadcrumb">traces &nbsp;&rsaquo;&nbsp; <b>jihye.career.trace</b></div>
+    <div class="breadcrumb"><img id="dd-logo" src="" alt="" /> traces &nbsp;&rsaquo;&nbsp; <b>jihye.career.trace</b></div>
     <div class="trace-meta">
       <span><span class="dot"></span>recording</span>
-      <span id="tb-current">span: overview</span>
+      <span id="tb-current">overview</span>
     </div>
   </div>
 
@@ -426,12 +568,14 @@ kbd{
     <div class="title">service: career &nbsp;&nbsp;env: interview &nbsp;&nbsp;trace_id: jhk_2026</div>
     <h1>  Hi Pulkit, let's trace jihye.stack </h1>
 
-    <div id="root-span">root span &nbsp; jihye.career &nbsp;&nbsp; duration: 2009 to now &nbsp;&nbsp; status: active</div>
+    <div id="mini-timeline"></div>
 
-    <div id="waterfall"></div>
+    <div id="root-span">dashboard &nbsp; jihye.career &nbsp;&nbsp; time range: 2009 to now &nbsp;&nbsp; 8 widgets &nbsp;&nbsp; status: active</div>
+
+    <div id="dashboard-grid"></div>
 
     <div id="hint">
-      press <kbd>space</kbd> to zoom into a span &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to move &nbsp;&middot;&nbsp; <kbd>esc</kbd> to return
+      press <kbd>space</kbd> to open a widget &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to move &nbsp;&middot;&nbsp; <kbd>esc</kbd> to return
     </div>
   </div>
 
@@ -594,7 +738,6 @@ const CLOSING = {
 };
 
 let current = -1; // -1 = overview
-const waterfall = document.getElementById('waterfall');
 const dotsWrap = document.getElementById('dots');
 const counter = document.getElementById('counter');
 const detail = document.getElementById('detail');
@@ -604,32 +747,98 @@ const overview = document.getElementById('overview');
 const closebtn = document.getElementById('closebtn');
 const tbCurrent = document.getElementById('tb-current');
 
-spans.forEach((s, i) => {
-  const row = document.createElement('div');
-  row.className = 'span-row';
-  const width = 30 + i * 11;
-  row.innerHTML = `
-    <div class="idx">${String(i+1).padStart(2,'0')}</div>
-    <div class="span-track">
-      <div class="span-block" data-i="${i}" style="width:${width}%; background:${s.color};">
-        <span class="label">${s.label}</span>
-        <span class="years">${s.years}</span>
+// per widget headline metric + a Datadog-style query string, purely cosmetic
+const closingKpi = { num: "open", query: "service:datadog status:candidate" };
+
+const grid = document.getElementById('dashboard-grid');
+
+// ---------- mini timeline strip above the dashboard ----------
+const miniTimeline = [
+  { label: "AhnLab",           start: "2009", end: "2010", color: "#B39DFF", spanId: "ahnlab" },
+  { label: "Samsung Membership", start: "2010", end: "2012", color: "#9D7BFF", spanId: "diagnosis" },
+  { label: "Samsung Tizen",    start: "2012", end: "2016", color: "#A78BFA", spanId: "tizen" },
+  { label: "Samsung Pay",      start: "2016", end: "2018", color: "#7C4DFF", spanId: "pay" },
+  { label: "Samsung Camera",   start: "2018", end: "2021", color: "#5B8DEF", spanId: "camera" },
+  { label: "LINE Graphics",    start: "2021", end: "2023", color: "#4FD1C5", spanId: "arcamera" },
+  { label: "AI Video",         start: "2023", end: "2024", color: "#34D399", spanId: "aivideo" },
+  { label: "USC MBA",          start: "2024", end: "2026", color: "#FFC24B", spanId: null }
+];
+
+document.getElementById('dd-logo').src = IMG.datadog;
+
+const timelineEl = document.getElementById('mini-timeline');
+
+miniTimeline.forEach((n, i) => {
+  const node = document.createElement('div');
+  node.className = 'tl-node';
+  node.style.setProperty('--c', n.color);
+  const labelPos = i % 2 === 0 ? 'above' : 'below';
+  node.innerHTML = `
+    <div class="tl-label ${labelPos}">${n.label}<span class="tl-dates">${n.start} to ${n.end}</span></div>
+    <div class="tl-dot"></div>
+  `;
+  if (n.spanId) {
+    const idx = spans.findIndex(s => s.id === n.spanId);
+    if (idx !== -1) node.addEventListener('click', () => openSpan(idx));
+  }
+  timelineEl.appendChild(node);
+});
+
+const ddNode = document.createElement('div');
+ddNode.className = 'tl-node datadog';
+ddNode.innerHTML = `
+  <div class="tl-label above">Datadog<span class="tl-dates">now</span></div>
+  <div class="tl-dot"><img src="${IMG.datadog}" /></div>
+`;
+ddNode.addEventListener('click', () => openClosing());
+timelineEl.appendChild(ddNode);
+
+function buildWidgetCard(s, i, kpi, isClosing) {
+  const card = document.createElement('div');
+  card.dataset.i = i;
+  card.className = 'widget-card';
+
+  if (isClosing) {
+    card.classList.add('widget-inprogress');
+    card.innerHTML = `
+      <div class="widget-header">
+        <span class="widget-title" style="color:${s.color}">${s.label}</span>
+        <span class="widget-badge open"><span class="bdot"></span>In Progress</span>
       </div>
-    </div>`;
-  waterfall.appendChild(row);
+      <div class="widget-thumb"><img src="${s.image}" /></div>
+      <div class="widget-footer">${s.years}</div>
+    `;
+  } else {
+    card.style.borderTopColor = s.color;
+    card.innerHTML = `
+      <div class="widget-header">
+        <span class="widget-title" style="color:${s.color}">${s.label}</span>
+        <span class="widget-badge"><span class="bdot"></span>OK</span>
+      </div>
+      <div class="widget-thumb"><img src="${s.image}" /></div>
+      <div class="widget-footer">${s.years}</div>
+    `;
+  }
+  card.addEventListener('click', () => {
+    if (isClosing) openClosing(); else openSpan(i);
+  });
+  grid.appendChild(card);
 
   const dot = document.createElement('div');
   dot.className = 'dotnav';
   dot.dataset.i = i;
+  dot.addEventListener('click', () => {
+    if (isClosing) openClosing(); else openSpan(i);
+  });
   dotsWrap.appendChild(dot);
-});
+}
 
-document.querySelectorAll('.span-block').forEach(el => {
-  el.addEventListener('click', () => openSpan(parseInt(el.dataset.i)));
+spans.forEach((s, i) => {
+  buildWidgetCard(s, i, null, false);
 });
-document.querySelectorAll('.dotnav').forEach(el => {
-  el.addEventListener('click', () => openSpan(parseInt(el.dataset.i)));
-});
+buildWidgetCard({ ...CLOSING, label: "Datadog", years: CLOSING.role, color: "#FFC24B", image: IMG.datadog }, spans.length, closingKpi, true);
+
+
 closebtn.addEventListener('click', closeDetail);
 
 document.getElementById('fsbtn').addEventListener('click', () => {
@@ -673,13 +882,13 @@ function buildBottomHtml(s) {
         <div class="chrome"><i></i><i></i><i></i></div>
         <img src="${s.metricsImage}" /><br>
       </div>`;
-  }if (s.metrics) {
+  }
+  if (s.metrics) {
     html += `
       <div class="metric-grid">
         ${s.metrics.map(m => `<div class="metric"><div class="num">${m.num}</div><div class="cap">${m.cap}</div></div>`).join('')}
       </div>`;
   }
-  
   return html;
 }
 
@@ -703,16 +912,16 @@ function openSpan(i) {
   renderDetail(s);
   detail.classList.add('show');
   closebtn.classList.add('show');
-  tbCurrent.textContent = 'span: ' + s.label.toLowerCase().replace(/\s+/g,'.');
+  tbCurrent.textContent = s.label.toLowerCase().replace(/\s+/g,'.');
   updateDots();
 }
 
 function openClosing() {
   current = spans.length;
-  renderDetail({ ...CLOSING, tag: "service.datadog · open span" });
+  renderDetail({ ...CLOSING, tag: "service.datadog · open span", image: IMG.datadog });
   detail.classList.add('show');
   closebtn.classList.add('show');
-  tbCurrent.textContent = 'span: datadog.next';
+  tbCurrent.textContent = 'datadog.next';
   updateDots();
 }
 
@@ -720,7 +929,7 @@ function closeDetail() {
   current = -1;
   detail.classList.remove('show');
   closebtn.classList.remove('show');
-  tbCurrent.textContent = 'span: overview';
+  tbCurrent.textContent = 'overview';
   updateDots();
 }
 
@@ -755,7 +964,7 @@ updateDots();
 
 // ---------- scrollytelling sections, same spans, same order ----------
 const scrollWrap = document.getElementById('scrollsections');
-const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span" }];
+const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span", image: IMG.datadog }];
 
 allForScroll.forEach((s, i) => {
   const section = document.createElement('div');
