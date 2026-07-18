@@ -284,12 +284,35 @@ html,body{
   background:var(--bg);
   margin-bottom:10px;
   border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px;
 }
 .widget-thumb img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
+  width:90%;
+  height:90%;
+  object-fit:contain;
   display:block;
+}
+
+/* ---------- MOUSE HIGHLIGHTER (yellow spotlight for presenting/screen recording) ---------- */
+#mouse-highlighter{
+  position:fixed;
+  top:0; left:0;
+  width:34px; height:34px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(255,214,0,0.75) 0%, rgba(255,214,0,0.4) 55%, rgba(255,214,0,0) 75%);
+  pointer-events:none;
+  z-index:99999;
+  transform:translate(-50%,-50%);
+  mix-blend-mode:screen;
+  transition:width 0.18s ease, height 0.18s ease, background 0.18s ease;
+  will-change:left, top;
+}
+#mouse-highlighter.click{
+  width:70px; height:70px;
+  background:radial-gradient(circle, rgba(255,214,0,0.9) 0%, rgba(255,214,0,0.5) 55%, rgba(255,214,0,0) 75%);
 }
 .widget-kpi{
   font-family:'JetBrains Mono', monospace;
@@ -988,6 +1011,20 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.25 });
 
 document.querySelectorAll('.scroll-section').forEach(el => io.observe(el));
+</script>
+<script>
+(function(){
+  const hl = document.createElement('div');
+  hl.id = 'mouse-highlighter';
+  document.body.appendChild(hl);
+
+  document.addEventListener('mousemove', (e) => {
+    hl.style.left = e.clientX + 'px';
+    hl.style.top = e.clientY + 'px';
+  });
+  document.addEventListener('mousedown', () => hl.classList.add('click'));
+  document.addEventListener('mouseup', () => hl.classList.remove('click'));
+})();
 </script>
 </body>
 </html>
