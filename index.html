@@ -859,7 +859,7 @@ function buildWidgetCard(s, i, kpi, isClosing) {
 spans.forEach((s, i) => {
   buildWidgetCard(s, i, null, false);
 });
-buildWidgetCard({ ...CLOSING, label: "Datadog", years: CLOSING.role, color: "#FFC24B", image: IMG.datadog_certificate }, spans.length, closingKpi, true);
+buildWidgetCard({ ...CLOSING, label: "Datadog", years: CLOSING.role, color: "#FFC24B", image: IMG.datadog }, spans.length, closingKpi, true);
 
 
 closebtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'auto' }));
