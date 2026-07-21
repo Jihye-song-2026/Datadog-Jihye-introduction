@@ -708,7 +708,7 @@ const spans = [
     years: "Senior Product Manager, Samsung",
     color: "#5B8DEF",
     tag: "service.camera · partner sdk",
-    cue: "Drove Samsung Mobile's top priority project: <span class='hl'> from feature to ecosystem delivery.</span>",
+    cue: "Drove Samsung Mobile's top priority project: <span class='hl'> Samsung camera project. </span>",
     role: "Senior Product Manager, Camera Strategy",
     narrative: "A CEO visit to a mobile store raised the issue, and I traced it back to the root cause and delivered key SDK integrations with partners including Instagram, Snapchat and TikTok.",
     image: IMG.camera,
@@ -731,7 +731,7 @@ const spans = [
     image: IMG.arcamera,
     metrics: [
       { num: "900%", cap: "increase in production speed, 2 to 20 effects per month" },
-      { num: "50%", cap: "increased usage" }
+      { num: "30%", cap: "improved upload speed" }
     ]
   },
   {
@@ -782,7 +782,7 @@ const miniTimeline = [
   { label: "Samsung Camera",   start: "2018", end: "2021", color: "#5B8DEF", spanId: "camera" },
   { label: "LINE Graphics",    start: "2021", end: "2023", color: "#4FD1C5", spanId: "arcamera" },
   { label: "AI Video",         start: "2023", end: "2024", color: "#34D399", spanId: "aivideo" },
-  { label: "USC MBA",          start: "2024", end: "2026", color: "#FFC24B", spanId: null }
+  { label: "USC MBA",          start: "2024", end: "2026", color: "#FFC24B", spanId: null } <br><br>
 ];
 
 document.getElementById('dd-logo').src = IMG.datadog;
@@ -800,7 +800,7 @@ miniTimeline.forEach((n, i) => {
   `;
   if (n.spanId) {
     const idx = spans.findIndex(s => s.id === n.spanId);
-    if (idx !== -1) node.addEventListener('click', () => openSpan(idx));
+    if (idx !== -1) node.addEventListener('click', () => scrollToIndex(idx));
   }
   timelineEl.appendChild(node);
 });
@@ -811,7 +811,7 @@ ddNode.innerHTML = `
   <div class="tl-label above">Datadog<span class="tl-dates">now</span></div>
   <div class="tl-dot"><img src="${IMG.datadog}" /></div>
 `;
-ddNode.addEventListener('click', () => openClosing());
+ddNode.addEventListener('click', () => scrollToIndex(spans.length));
 timelineEl.appendChild(ddNode);
 
 function buildWidgetCard(s, i, kpi, isClosing) {
@@ -841,7 +841,7 @@ function buildWidgetCard(s, i, kpi, isClosing) {
     `;
   }
   card.addEventListener('click', () => {
-    if (isClosing) openClosing(); else openSpan(i);
+    scrollToIndex(isClosing ? spans.length : i);
   });
   grid.appendChild(card);
 
@@ -849,7 +849,7 @@ function buildWidgetCard(s, i, kpi, isClosing) {
   dot.className = 'dotnav';
   dot.dataset.i = i;
   dot.addEventListener('click', () => {
-    if (isClosing) openClosing(); else openSpan(i);
+    scrollToIndex(isClosing ? spans.length : i);
   });
   dotsWrap.appendChild(dot);
 }
@@ -860,7 +860,7 @@ spans.forEach((s, i) => {
 buildWidgetCard({ ...CLOSING, label: "Datadog", years: CLOSING.role, color: "#FFC24B", image: IMG.datadog }, spans.length, closingKpi, true);
 
 
-closebtn.addEventListener('click', closeDetail);
+closebtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'auto' }));
 
 document.getElementById('fsbtn').addEventListener('click', () => {
   if (!document.fullscreenElement) {
@@ -922,38 +922,6 @@ function buildRightHtml(s) {
   `;
 }
 
-function renderDetail(s) {
-  detailLeft.innerHTML = buildLeftHtml(s);
-  detailRight.innerHTML = buildRightHtml(s);
-}
-
-function openSpan(i) {
-  current = i;
-  const s = spans[i];
-  renderDetail(s);
-  detail.classList.add('show');
-  closebtn.classList.add('show');
-  tbCurrent.textContent = s.label.toLowerCase().replace(/\s+/g,'.');
-  updateDots();
-}
-
-function openClosing() {
-  current = spans.length;
-  renderDetail({ ...CLOSING, tag: "service.datadog · open span", image: IMG.datadog });
-  detail.classList.add('show');
-  closebtn.classList.add('show');
-  tbCurrent.textContent = 'datadog.next';
-  updateDots();
-}
-
-function closeDetail() {
-  current = -1;
-  detail.classList.remove('show');
-  closebtn.classList.remove('show');
-  tbCurrent.textContent = 'overview';
-  updateDots();
-}
-
 function updateDots() {
   document.querySelectorAll('.dotnav').forEach((d, i) => {
     d.classList.toggle('active', i === current);
@@ -963,26 +931,6 @@ function updateDots() {
     : (current === spans.length ? 'next / ' + spans.length : (current+1) + ' / ' + spans.length);
 }
 
-function next() {
-  if (current === -1) { openSpan(0); }
-  else if (current < spans.length - 1) { openSpan(current + 1); }
-  else if (current === spans.length - 1) { openClosing(); }
-}
-function prev() {
-  if (current === 0) { closeDetail(); }
-  else if (current > 0) { openSpan(current - 1); }
-  else if (current === spans.length) { openSpan(spans.length - 1); }
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') { e.preventDefault(); next(); }
-  else if (e.code === 'ArrowRight') { next(); }
-  else if (e.code === 'ArrowLeft') { prev(); }
-  else if (e.code === 'Escape') { closeDetail(); }
-});
-
-updateDots();
-
 // ---------- scrollytelling sections, same spans, same order ----------
 const scrollWrap = document.getElementById('scrollsections');
 const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span", image: IMG.datadog }];
@@ -990,6 +938,7 @@ const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span
 allForScroll.forEach((s, i) => {
   const section = document.createElement('div');
   section.className = 'scroll-section';
+  section.dataset.i = i;
   const idxLabel = i < spans.length ? String(i+1).padStart(2,'0') + ' / ' + spans.length : 'next';
   section.innerHTML = `
     <div class="scroll-left">
@@ -1002,13 +951,38 @@ allForScroll.forEach((s, i) => {
   scrollWrap.appendChild(section);
 });
 
+const sectionEls = Array.from(document.querySelectorAll('.scroll-section'));
+
+// smoothly scroll the real page to the section matching index i,
+// so scrolling naturally continues forward/backward in the same order from there
+function scrollToIndex(i) {
+  const el = sectionEls[i];
+  if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+}
+
 const io = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) entry.target.classList.add('in-view');
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      current = Number(entry.target.dataset.i);
+      tbCurrent.textContent = current === spans.length
+        ? 'datadog.next'
+        : spans[current].label.toLowerCase().replace(/\s+/g,'.');
+      updateDots();
+    }
   });
-}, { threshold: 0.25 });
+}, { threshold: 0.5 });
 
-document.querySelectorAll('.scroll-section').forEach(el => io.observe(el));
+sectionEls.forEach(el => io.observe(el));
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); scrollToIndex(Math.min(current + 1, spans.length)); }
+  else if (e.code === 'ArrowRight') { scrollToIndex(Math.min(current + 1, spans.length)); }
+  else if (e.code === 'ArrowLeft') { scrollToIndex(Math.max(current - 1, 0)); }
+  else if (e.code === 'Escape') { window.scrollTo({ top: 0, behavior: 'auto' }); }
+});
+
+updateDots();
 </script>
 <script>
 (function(){
