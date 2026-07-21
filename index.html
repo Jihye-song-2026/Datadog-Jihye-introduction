@@ -935,8 +935,8 @@ function updateDots() {
 
 // ---------- scrollytelling sections, same spans, same order ----------
 const scrollWrap = document.getElementById('scrollsections');
-const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span", image: IMG.datadog }];
-
+const allForScroll = [...spans, { ...CLOSING, tag: "service.datadog · open span" }];
+  
 allForScroll.forEach((s, i) => {
   const section = document.createElement('div');
   section.className = 'scroll-section';
